@@ -1,0 +1,25 @@
+# Python gyorsítótárak
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Környezetek
+venv/
+env/
+.env
+cpu-projekt-env/
+
+# Jupyter Notebook adatok
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Adatok (ha nagyok, ne töltsd fel őket)
+data/raw/*.csv
+data/processed/*.csv
+
+# Modell fájlok (ha túl nagyok lennének)
+# models/*.pkl
+
+# OS specifikus fájlok
+.DS_Store
+Thumbs.db
