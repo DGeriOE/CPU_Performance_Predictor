@@ -22,8 +22,32 @@ A projekt egy dedikált Conda környezetet használ a függőségek kezelésére
    ```bash
    git clone <a-te-repo-linked>
    cd <a-repo-mappája>
-Környezet létrehozása:Bashconda env create -f environment.yml
-Környezet aktiválása:Bashconda activate cpu-perf-prediction
-Jupyter Notebook indítása (az 5-9. heti munkához):Bashjupyter notebook
-A Webalkalmazás indítása (később):Bashstreamlit run app.py
-✅ Ütemterv / Státusz[ ] 1. fázis: Adatfeltárás (EDA), hiányzó értékek kezelése, adatszivárgás megszüntetése.[ ] 2. fázis: Feature engineering (pl. dátumok átalakítása, kategóriák One-Hot kódolása).[ ] 3. fázis: Lineáris regressziós modell építése és kiértékelése ($R^2$, MSE, MAE).[ ] 4. fázis: Webalkalmazás (Streamlit) fejlesztése és a modell integrálása.[ ] 5. fázis: Publikálás valós eszközön történő teszteléshez.
+   ```
+
+2. **Környezet létrehozása:**
+   ```bash
+   conda env create -f environment.yml
+   ```
+
+3. **Környezet aktiválása:**
+   ```bash
+   conda activate cpu-perf-prediction
+   ```
+
+4. **Jupyter Notebook indítása (az 5-9. heti munkához):**
+   ```bash
+   jupyter notebook
+   ```
+
+5. **A Webalkalmazás indítása (később):**
+   ```bash
+   streamlit run app.py
+   ```
+
+## ✅ Ütemterv / Státusz
+
+- [ ] 1. fázis: Adatfeltárás (EDA), hiányzó értékek kezelése, adatszivárgás megszüntetése.
+- [ ] 2. fázis: Feature engineering (pl. dátumok átalakítása, kategóriák One-Hot kódolása).
+- [ ] 3. fázis: Lineáris regressziós modell építése és kiértékelése ($R^2$, MSE, MAE).
+- [ ] 4. fázis: Webalkalmazás (Streamlit) fejlesztése és a modell integrálása.
+- [ ] 5. fázis: Publikálás valós eszközön történő teszteléshez.
