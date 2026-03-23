@@ -1,25 +1,32 @@
-# Python gyorsítótárak
+# Python cache fájlok
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Környezetek
-venv/
-env/
-.env
-cpu-projekt-env/
 
 # Jupyter Notebook adatok
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# Adatok (ha nagyok, ne töltsd fel őket)
-data/raw/*.csv
-data/processed/*.csv
+# Conda és virtuális környezetek (ha a projekt mappájába hozod létre őket)
+env/
+.env/
+venv/
+.conda/
 
-# Modell fájlok (ha túl nagyok lennének)
-# models/*.pkl
+# Adatok (Csak a mappa struktúrát tartjuk meg, a fájlokat nem)
+data/raw/*
+!data/raw/.keep
+data/processed/*
+!data/processed/.keep
 
-# OS specifikus fájlok
+# Betanított modellek (ezeket kóddal generáljuk, nem kommitoljuk)
+models/*.pkl
+models/*.joblib
+!models/.keep
+
+# Operációs rendszer specifikus fájlok
 .DS_Store
 Thumbs.db
+
+# Streamlit specifikus fájlok (későbbre)
+.streamlit/secrets.toml
