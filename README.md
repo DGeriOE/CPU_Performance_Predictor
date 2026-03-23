@@ -20,8 +20,8 @@ A projekt egy dedikált Conda környezetet használ a függőségek kezelésére
 
 1. **Repozitórium klónozása:**
    ```bash
-   git clone <[a-te-repo-linked](https://github.com/DGeriOE/CPU_Performance_Predictor.git)>
-   cd <CPU_Performance_Predictor>
+   git clone https://github.com/DGeriOE/CPU_Performance_Predictor.git
+   cd CPU_Performance_Predictor
    ```
 
 2. **Környezet létrehozása:**
