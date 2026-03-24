@@ -31,7 +31,7 @@ A projekt egy dedikált Conda környezetet használ a függőségek kezelésére
 
 3. **Környezet aktiválása:**
    ```bash
-   conda activate cpu-perf-prediction
+   conda activate cpu-perf-pred
    ```
 
 4. **Jupyter Notebook indítása (az 5-9. heti munkához):**

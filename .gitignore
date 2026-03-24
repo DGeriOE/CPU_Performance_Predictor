@@ -14,10 +14,10 @@ venv/
 .conda/
 
 # Adatok (Csak a mappa struktúrát tartjuk meg, a fájlokat nem)
-data/raw/*
-!data/raw/.keep
-data/processed/*
-!data/processed/.keep
+# data/raw/*
+# !data/raw/.keep
+# data/processed/*
+# !data/processed/.keep
 
 # Betanított modellek (ezeket kóddal generáljuk, nem kommitoljuk)
 models/*.pkl
