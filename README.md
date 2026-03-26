@@ -6,7 +6,13 @@ Ez a repozitórium egy egyetemi gépi tanulás feladat megoldását tartalmazza.
 A feladathoz használt adatbázis a Kaggle platformról származik, amely a PassMark szoftver benchmark eredményeit tartalmazza:
 [CPU Benchmarks Dataset (Kaggle)](https://www.kaggle.com/datasets/alanjo/cpu-benchmarks)
 
-*Megjegyzés: A célváltozó (powerPerf) logaritmikus transzformáción (log-transform) esik át a modell betanítása előtt a jobb eloszlás és a lineáris kapcsolatok erősítése érdekében.*
+Statisztika és stratégia:
+- 3825 line:
+   - **1858**-nál hiányzik a **price** (ezzel együtt cpuValue és threadValue is) --> price pótlásaival **tanítóhalmaz**
+   - **685**-nél hiányzik a **TDP** (ezzel együtt a powerPerf is) --> TDP pótlásaival végső **tesztelő halmaz**
+ 
+
+*Megjegyzés: Az adathalmaz egy része logaritmikus transzformáción (log-transform) esik át a modell betanítása előtt a jobb eloszlás és a lineáris kapcsolatok erősítése érdekében.*
 
 ## 📁 Projekt Struktúra
 - `data/` : Ide kerülnek a nyers (`raw`) és az előfeldolgozott (`processed`) .csv fájlok. (Ezek a `.gitignore` miatt nincsenek a repóban, a letöltött Kaggle adatbázist ide kell bemásolni).
