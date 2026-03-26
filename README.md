@@ -8,8 +8,8 @@ A feladathoz használt adatbázis a Kaggle platformról származik, amely a Pass
 
 Statisztika és stratégia:
 - 3825 line:
-   - 1858-nál hiányzik a **price** (ezzel együtt cpuValue és threadValue is) --> price pótlásaival tanítóhalmaz
-   - 685-nél hiányzik a **TDP** (ezzel együtt a powerPerf is) --> TDP pótlásaival végső tesztelő halmaz
+   - **1858**-nál hiányzik a **price** (ezzel együtt cpuValue és threadValue is) --> price pótlásaival **tanítóhalmaz**
+   - **685**-nél hiányzik a **TDP** (ezzel együtt a powerPerf is) --> TDP pótlásaival végső **tesztelő halmaz**
  
 
 *Megjegyzés: Az adathalmaz egy része logaritmikus transzformáción (log-transform) esik át a modell betanítása előtt a jobb eloszlás és a lineáris kapcsolatok erősítése érdekében.*
