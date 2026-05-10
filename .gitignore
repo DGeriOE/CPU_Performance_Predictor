@@ -20,9 +20,9 @@ venv/
 # !data/processed/.keep
 
 # Betanított modellek (ezeket kóddal generáljuk, nem kommitoljuk)
-models/*.pkl
-models/*.joblib
-!models/.keep
+# models/*.pkl
+# models/*.joblib
+# !models/.keep
 
 # Operációs rendszer specifikus fájlok
 .DS_Store

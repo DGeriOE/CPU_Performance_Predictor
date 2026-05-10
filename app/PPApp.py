@@ -9,9 +9,8 @@ import os
 def load_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_final_imputed.csv") 
-    
-    # Itt most a teljes adathalmazt betöltjük, nem szűrünk előre
     df = pd.read_csv(data_path)
+    # Ne felejtsd el az 1-est, ha a pótoltakat akarod nézni!
     return df
 
 @st.cache_resource
