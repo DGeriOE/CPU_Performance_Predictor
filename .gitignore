@@ -30,5 +30,4 @@ Thumbs.db
 
 # Streamlit specifikus fájlok (későbbre)
 .streamlit/secrets.toml
-.github/workflows/sync-to-hub.yml
 .vscode/settings.json
