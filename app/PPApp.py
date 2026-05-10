@@ -15,7 +15,7 @@ def load_data():
     df = pd.read_csv(data_path)
     
     # Csak azok a sorok, ahol a powerPerf érték pótolt (imputed) volt
-    only_pp_imputed_df = df[df['powerPerf_is_imputed'] == 1].copy()
+    only_pp_imputed_df = df[df['powerPerf_is_imputed'] == 0].copy()
     
     return only_pp_imputed_df
 
@@ -36,7 +36,7 @@ def load_assets():
 # Adatok betöltése
 try:
     df_final = load_data()
-    imputed_cpus = df_final[df_final['powerPerf_is_imputed'] == 1].copy()
+    imputed_cpus = df_final[df_final['powerPerf_is_imputed'] == 0].copy()
     pp_model, model_columns, cat_list, sock_list = load_assets()
 except Exception as e:
     st.error(f"Hiba a betöltéskor: {e}")
