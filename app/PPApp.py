@@ -7,10 +7,10 @@ import os
 # --- 1. Adatok és Modellek betöltése ---
 @st.cache_data
 def load_data():
-    # Útvonal keresése
-    data_path = "data/processed/CPU_benchmark_final_imputed.csv" 
-    if not os.path.exists(data_path):
-        data_path = "../" + data_path
+    # Megkeressük, hol van pontosan ez a PPApp.py fájl
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Visszalépünk egyet a gyökérbe, majd be a data/processed mappába
+    data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_final_imputed.csv") 
     
     df = pd.read_csv(data_path)
     
@@ -22,12 +22,15 @@ def load_data():
 
 @st.cache_resource
 def load_assets():
-    base_path = "models/" if os.path.exists("models/") else "../models/"
-    model = joblib.load(f'{base_path}powerPerf_rf_model.pkl')
-    columns = joblib.load(f'{base_path}powerPerf_model_columns.pkl')
-    # Dinamikus listák betöltése a notebookból
-    categories = joblib.load(f'{base_path}categories_list.pkl')
-    sockets = joblib.load(f'{base_path}sockets_list.pkl')
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Visszalépünk egyet a gyökérbe, majd be a models mappába
+    base_path = os.path.join(current_dir, "..", "models")
+    
+    model = joblib.load(os.path.join(base_path, 'powerPerf_rf_model.pkl'))
+    columns = joblib.load(os.path.join(base_path, 'powerPerf_model_columns.pkl'))
+    categories = joblib.load(os.path.join(base_path, 'categories_list.pkl'))
+    sockets = joblib.load(os.path.join(base_path, 'sockets_list.pkl'))
+    
     return model, columns, categories, sockets
 
 # Adatok betöltése
