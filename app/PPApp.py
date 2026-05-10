@@ -7,19 +7,18 @@ import os
 # --- 1. Adatok és Modellek betöltése ---
 @st.cache_data
 def load_data():
-    # A legvégső fájlt töltsd be, amiben már minden (TDP, Price ÉS PowerPerf) pótolva van!
+    # Útvonal keresése
     data_path = "data/processed/CPU_benchmark_final_imputed.csv" 
     if not os.path.exists(data_path):
         data_path = "../" + data_path
     
     df = pd.read_csv(data_path)
     
-    # Itt most már mind a három pótlási jelzőt nézzük
-    imputed_mask = (df['TDP_is_imputed'] == 1) | \
-                   (df['price_is_imputed'] == 1) | \
-                   (df['powerPerf_is_imputed'] == 1)
-                   
-    return df[imputed_mask].copy()
+    # Csak azok a sorok, ahol a powerPerf érték pótolt (imputed) volt
+    only_pp_imputed_df = df[df['powerPerf_is_imputed'] == 1].copy()
+    
+    return only_pp_imputed_df
+
 
 @st.cache_resource
 def load_models():
@@ -40,10 +39,14 @@ except Exception as e:
 st.set_page_config(page_title="CPU Predictor", layout="wide")
 st.title("🚀 CPU Power Performance Becslés")
 
-# --- 3. Legördülő menü a pótolt CPU-khoz ---
+# --- 3. Legördülő menü ---
 st.sidebar.header("Pótolt adatok tesztelése")
+
+# Kiírjuk, hány ilyen processzor van
+st.sidebar.write(f"Talált pótolt processzorok: {len(imputed_cpus)} db")
+
 selected_cpu_name = st.sidebar.selectbox(
-    "Válassz egy korábban hiányos adatú processzort:",
+    "Válassz egy pótolt PowerPerf értékű CPU-t:",
     ["--- Manuális bevitel ---"] + list(imputed_cpus['cpuName'].unique())
 )
 
@@ -116,8 +119,28 @@ with col_pred:
         
         if default_values is not None:
             actual_pp = round(default_values['powerPerf'], 2)
-            st.metric("Eredeti (pótolt) érték a CSV-ben", actual_pp)
-            diff = round(prediction_actual - actual_pp, 2)
-            st.write(f"Különbség: {diff}")
+            
+            # Százalékos eltérés kiszámítása
+            if actual_pp != 0:
+                percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100
+            else:
+                percent_diff = 0
+            
+            # Megjelenítés metrika kártyaként
+            # A delta paraméter automatikusan mutatja az irányt és a százalékot
+            st.metric(
+                label="Eredeti (pótolt) érték a CSV-ben", 
+                value=actual_pp, 
+                delta=f"{round(percent_diff, 2)}% eltérés",
+                delta_color="inverse" if abs(percent_diff) > 1 else "normal" 
+            )
+
+            # Szöveges értékelés a pontosságról
+            if abs(percent_diff) < 0.01:
+                st.write("✨ **Tökéletes egyezés:** A webapp és a tanítási adatok azonos eredményt adnak.")
+            elif abs(percent_diff) < 5:
+                st.write("✅ **Magas pontosság:** Az eltérés minimális, valószínűleg kerekítési különbség.")
+            else:
+                st.write(f"⚠️ **Eltérés észlelhető:** A modell {round(abs(percent_diff), 2)}%-kal más értéket számolt, mint ami a CSV-ben szerepel.")
 
             
