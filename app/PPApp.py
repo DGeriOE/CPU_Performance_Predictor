@@ -7,23 +7,16 @@ import os
 # --- 1. Adatok és Modellek betöltése ---
 @st.cache_data
 def load_data():
-    # Megkeressük, hol van pontosan ez a PPApp.py fájl
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Visszalépünk egyet a gyökérbe, majd be a data/processed mappába
     data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_final_imputed.csv") 
     
+    # Itt most a teljes adathalmazt betöltjük, nem szűrünk előre
     df = pd.read_csv(data_path)
-    
-    # Csak azok a sorok, ahol a powerPerf érték pótolt (imputed) volt
-    only_pp_imputed_df = df[df['powerPerf_is_imputed'] == 0].copy()
-    
-    return only_pp_imputed_df
-
+    return df
 
 @st.cache_resource
 def load_assets():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Visszalépünk egyet a gyökérbe, majd be a models mappába
     base_path = os.path.join(current_dir, "..", "models")
     
     model = joblib.load(os.path.join(base_path, 'powerPerf_rf_model.pkl'))
@@ -35,8 +28,7 @@ def load_assets():
 
 # Adatok betöltése
 try:
-    df_final = load_data()
-    imputed_cpus = df_final[df_final['powerPerf_is_imputed'] == 0].copy()
+    df_full = load_data()
     pp_model, model_columns, cat_list, sock_list = load_assets()
 except Exception as e:
     st.error(f"Hiba a betöltéskor: {e}")
@@ -44,27 +36,39 @@ except Exception as e:
 
 # --- 2. UI Beállítása ---
 st.set_page_config(page_title="CPU Predictor", layout="wide")
-st.title("🚀 CPU Power Performance Becslés")
+st.title("🚀 CPU Power Performance Becslés és Validáció")
 
-# --- 3. Legördülő menü ---
-st.sidebar.header("Pótolt adatok tesztelése")
+# --- 3. Szűrő és Legördülő menü a Side baron ---
+st.sidebar.header("Adathalmaz választása")
 
-# Kiírjuk, hány ilyen processzor van
-st.sidebar.write(f"Talált pótolt processzorok: {len(imputed_cpus)} db")
-
-selected_cpu_name = st.sidebar.selectbox(
-    "Válassz egy pótolt PowerPerf értékű CPU-t:",
-    ["--- Manuális bevitel ---"] + list(imputed_cpus['cpuName'].unique())
+# ÚJ: Választókapcsoló az adathalmaz típusához
+data_mode = st.sidebar.radio(
+    "Milyen adatok között böngésznél?",
+    ["Pótolt adatok (Imputed)", "Eredeti adatok (Original)"],
+    help="A 'Pótolt' a modell által generált értékeket mutatja, az 'Eredeti' a valós benchmark eredményeket."
 )
 
-# Alapadatok kinyerése a választott CPU-hoz
+# Adatok szűrése a választás alapján
+if data_mode == "Pótolt adatok (Imputed)":
+    current_display_df = df_full[df_full['powerPerf_is_imputed'] == 1].copy()
+    status_msg = "📌 Ez egy eredetileg hiányos adatú processzor, amit regresszióval pótoltál."
+else:
+    current_display_df = df_full[df_full['powerPerf_is_imputed'] == 0].copy()
+    status_msg = "🔍 Ez egy valós mérési adat. Teszteld, mennyire pontos a modell becslése!"
+
+st.sidebar.write(f"Talált processzorok: {len(current_display_df)} db")
+
+selected_cpu_name = st.sidebar.selectbox(
+    "Válassz egy CPU-t a listából:",
+    ["--- Manuális bevitel ---"] + list(current_display_df['cpuName'].unique())
+)
+
+# Alapadatok kinyerése
 default_values = None
 if selected_cpu_name != "--- Manuális bevitel ---":
-    default_values = imputed_cpus[imputed_cpus['cpuName'] == selected_cpu_name].iloc[0]
-    st.sidebar.info(f"Kiválasztva: {selected_cpu_name}")
+    default_values = current_display_df[current_display_df['cpuName'] == selected_cpu_name].iloc[0]
 
 def get_idx(lst, val):
-    # Ha a CPU socketje nincs a listában, automatikusan az 'Other' indexét adja vissza
     if val in lst:
         return lst.index(val)
     elif 'Other' in lst:
@@ -74,9 +78,8 @@ def get_idx(lst, val):
 st.sidebar.divider()
 st.sidebar.header("Specifikációk finomhangolása")
 
-# --- 4. Felhasználói bemenetek (Dinamikus alapértékekkel) ---
+# --- 4. Felhasználói bemenetek ---
 def user_input_features(defaults):
-    # Segédfüggvény az alapérték meghatározásához
     def get_val(key, default):
         return defaults[key] if defaults is not None else default
 
@@ -85,12 +88,8 @@ def user_input_features(defaults):
     cores = st.sidebar.slider("Magok száma", 1, 128, value=int(get_val('cores', 8)))
     price = st.sidebar.number_input("Ár (USD)", min_value=0.0, value=float(get_val('price', 300.0)))
     testDate = st.sidebar.number_input("Év", min_value=2000, max_value=2026, value=int(get_val('testDate', 2023)))
-    
-    # Kategória és Socket listák
     category = st.sidebar.selectbox("Kategória", cat_list, index=get_idx(cat_list, get_val('category', '')))
     socket = st.sidebar.selectbox("Socket", sock_list, index=get_idx(sock_list, get_val('socket_grouped', '')))
-    
-    # Alapértelmezett index keresése a listában
 
     return pd.DataFrame({
         'cpuMark': [cpuMark], 'threadMark': [threadMark], 'cores': [cores],
@@ -107,10 +106,11 @@ with col_info:
     st.subheader("Bemeneti paraméterek")
     st.write(input_df)
     if default_values is not None:
-        st.write("📌 *Ez egy eredetileg hiányos adatú processzor, amit regresszióval pótoltál.*")
+        st.info(status_msg)
 
 with col_pred:
     if st.button('Becslés indítása', use_container_width=True):
+        # Kódolás és predikció
         input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
         input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
         
@@ -121,28 +121,21 @@ with col_pred:
         
         if default_values is not None:
             actual_pp = round(default_values['powerPerf'], 2)
+            percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
             
-            # Százalékos eltérés kiszámítása
-            if actual_pp != 0:
-                percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100
-            else:
-                percent_diff = 0
+            label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
             
-            # Megjelenítés metrika kártyaként
-            # A delta paraméter automatikusan mutatja az irányt és a százalékot
             st.metric(
-                label="Eredeti (pótolt) érték a CSV-ben", 
+                label=label_text, 
                 value=actual_pp, 
                 delta=f"{round(percent_diff, 2)}% eltérés",
-                delta_color="inverse" if abs(percent_diff) > 1 else "normal" 
+                delta_color="inverse" if abs(percent_diff) > 5 else "normal" 
             )
 
-            # Szöveges értékelés a pontosságról
-            if abs(percent_diff) < 0.01:
-                st.write("✨ **Tökéletes egyezés:** A webapp és a tanítási adatok azonos eredményt adnak.")
-            elif abs(percent_diff) < 5:
-                st.write("✅ **Magas pontosság:** Az eltérés minimális, valószínűleg kerekítési különbség.")
+            # Kiértékelés
+            if abs(percent_diff) < 0.1:
+                st.write("✨ **Tökéletes egyezés!**")
+            elif abs(percent_diff) < 10:
+                st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
             else:
-                st.write(f"⚠️ **Eltérés észlelhető:** A modell {round(abs(percent_diff), 2)}%-kal más értéket számolt, mint ami a CSV-ben szerepel.")
-
-            
+                st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
