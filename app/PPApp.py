@@ -119,3 +119,5 @@ with col_pred:
             st.metric("Eredeti (pótolt) érték a CSV-ben", actual_pp)
             diff = round(prediction_actual - actual_pp, 2)
             st.write(f"Különbség: {diff}")
+
+            
