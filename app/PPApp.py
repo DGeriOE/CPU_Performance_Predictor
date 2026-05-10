@@ -21,18 +21,22 @@ def load_data():
 
 
 @st.cache_resource
-def load_models():
+def load_assets():
     base_path = "models/" if os.path.exists("models/") else "../models/"
     model = joblib.load(f'{base_path}powerPerf_rf_model.pkl')
     columns = joblib.load(f'{base_path}powerPerf_model_columns.pkl')
-    return model, columns
+    # Dinamikus listák betöltése a notebookból
+    categories = joblib.load(f'{base_path}categories_list.pkl')
+    sockets = joblib.load(f'{base_path}sockets_list.pkl')
+    return model, columns, categories, sockets
 
 # Adatok betöltése
 try:
-    imputed_cpus = load_data()
-    pp_model, model_columns = load_models()
+    df_final = load_data()
+    imputed_cpus = df_final[df_final['powerPerf_is_imputed'] == 1].copy()
+    pp_model, model_columns, cat_list, sock_list = load_assets()
 except Exception as e:
-    st.error(f"Hiba az adatok/modellek betöltésekor: {e}")
+    st.error(f"Hiba a betöltéskor: {e}")
     st.stop()
 
 # --- 2. UI Beállítása ---
@@ -56,6 +60,14 @@ if selected_cpu_name != "--- Manuális bevitel ---":
     default_values = imputed_cpus[imputed_cpus['cpuName'] == selected_cpu_name].iloc[0]
     st.sidebar.info(f"Kiválasztva: {selected_cpu_name}")
 
+def get_idx(lst, val):
+    # Ha a CPU socketje nincs a listában, automatikusan az 'Other' indexét adja vissza
+    if val in lst:
+        return lst.index(val)
+    elif 'Other' in lst:
+        return lst.index('Other')
+    return 0
+
 st.sidebar.divider()
 st.sidebar.header("Specifikációk finomhangolása")
 
@@ -65,36 +77,23 @@ def user_input_features(defaults):
     def get_val(key, default):
         return defaults[key] if defaults is not None else default
 
-    cpuMark = st.sidebar.number_input("CPU Mark", min_value=0, 
-                                     value=int(get_val('cpuMark', 15000)))
-    threadMark = st.sidebar.number_input("Thread Mark", min_value=0, 
-                                         value=int(get_val('threadMark', 2500)))
-    cores = st.sidebar.slider("Magok száma", 1, 128, 
-                               value=int(get_val('cores', 8)))
-    price = st.sidebar.number_input("Ár (USD)", min_value=0.0, 
-                                     value=float(get_val('price', 300.0)))
-    testDate = st.sidebar.number_input("Megjelenés éve", min_value=2000, max_value=2026, 
-                                        value=int(get_val('testDate', 2023)))
+    cpuMark = st.sidebar.number_input("CPU Mark", min_value=0, value=int(get_val('cpuMark', 15000)))
+    threadMark = st.sidebar.number_input("Thread Mark", min_value=0, value=int(get_val('threadMark', 2500)))
+    cores = st.sidebar.slider("Magok száma", 1, 128, value=int(get_val('cores', 8)))
+    price = st.sidebar.number_input("Ár (USD)", min_value=0.0, value=float(get_val('price', 300.0)))
+    testDate = st.sidebar.number_input("Év", min_value=2000, max_value=2026, value=int(get_val('testDate', 2023)))
     
     # Kategória és Socket listák
-    cat_list = ['Desktop', 'Laptop', 'Server', 'Mobile', 'Embedded']
-    sock_list = ['LGA1700', 'AM4', 'AM5', 'LGA1200', 'FCBGA1449', 'LGA1151', 'Other']
+    category = st.sidebar.selectbox("Kategória", cat_list, index=get_idx(cat_list, get_val('category', '')))
+    socket = st.sidebar.selectbox("Socket", sock_list, index=get_idx(sock_list, get_val('socket_grouped', '')))
     
     # Alapértelmezett index keresése a listában
-    def get_idx(lst, val):
-        return lst.index(val) if val in lst else lst.index('Other')
 
-    category = st.sidebar.selectbox("Kategória", cat_list, 
-                                    index=get_idx(cat_list, get_val('category', 'Desktop')))
-    socket = st.sidebar.selectbox("Foglalat (Socket)", sock_list, 
-                                   index=get_idx(sock_list, get_val('socket_grouped', 'Other')))
-    
-    data = {
-        'cpuMark': cpuMark, 'threadMark': threadMark, 'cores': cores,
-        'price': price, 'testDate': testDate, 'category': category,
-        'socket_grouped': socket
-    }
-    return pd.DataFrame(data, index=[0])
+    return pd.DataFrame({
+        'cpuMark': [cpuMark], 'threadMark': [threadMark], 'cores': [cores],
+        'price': [price], 'testDate': [testDate], 'category': [category],
+        'socket_grouped': [socket]
+    })
 
 input_df = user_input_features(default_values)
 
