@@ -82,7 +82,7 @@ def user_input_features(defaults):
     
     # Alapértelmezett index keresése a listában
     def get_idx(lst, val):
-        return lst.index(val) if val in lst else 0
+        return lst.index(val) if val in lst else lst.index('Other')
 
     category = st.sidebar.selectbox("Kategória", cat_list, 
                                     index=get_idx(cat_list, get_val('category', 'Desktop')))
