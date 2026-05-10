@@ -10,7 +10,6 @@ def load_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_final_imputed.csv") 
     df = pd.read_csv(data_path)
-    # Ne felejtsd el az 1-est, ha a pótoltakat akarod nézni!
     return df
 
 @st.cache_resource
@@ -107,6 +106,17 @@ with col_info:
     if default_values is not None:
         st.info(status_msg)
 
+    st.divider()
+    
+    st.subheader("🎯 Mi befolyásolta a döntést?")
+    # Feature Importance kinyerése és rendezése
+    importances = pd.Series(pp_model.feature_importances_, index=model_columns)
+    top_10_features = importances.sort_values(ascending=False).head(10)
+    
+    # Megjelenítés vízszintes oszlopdiagramon
+    st.bar_chart(top_10_features)
+    st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
+
 with col_pred:
     if st.button('Becslés indítása', use_container_width=True):
         # Kódolás és predikció
@@ -138,3 +148,30 @@ with col_pred:
                 st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
             else:
                 st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
+    
+        st.divider()
+        st.subheader("📊 Piaci elhelyezkedés")
+        # Betöltjük az összes CPU-t az összehasonlításhoz
+        # (Feltételezve, hogy a load_data() a teljes df-et adja vissza)
+        all_data = pd.read_csv("data/processed/CPU_benchmark_final_imputed.csv") if os.path.exists("data/processed/CPU_benchmark_final_imputed.csv") else pd.read_csv("../data/processed/CPU_benchmark_final_imputed.csv")
+        
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        if prediction_actual is not None:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.histplot(all_data['powerPerf'], kde=True, ax=ax, color='gray', alpha=0.5)
+            # Meghúzzuk a piros vonalat az aktuális becslésnél
+            ax.axvline(prediction_actual, color='red', linestyle='--', linewidth=2, label='Te processzorod')
+            ax.set_title("Power Performance eloszlás a teljes piacon")
+            ax.set_xlabel("Hatékonysági érték")
+            ax.set_ylabel("Processzorok száma")
+            ax.legend()
+        
+            st.pyplot(fig)
+            
+            # Százalékos helyezkedés kiszámítása
+            percentile = (all_data['powerPerf'] < prediction_actual).mean() * 100
+            st.write(f"Ez a processzor hatékonyabb a piaci modellek **{percentile:.1f}%**-ánál.")
+        else:
+            st.info("Indítsd el a becslést, hogy lásd, hol helyezkedik el a piacon!")
