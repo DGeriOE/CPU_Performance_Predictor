@@ -1,3 +1,13 @@
+---
+title: CPU Performance Predictor
+emoji: 🚀
+colorFrom: blue
+colorTo: red
+sdk: streamlit
+app_file: app/PPApp.py
+pinned: false
+---
+
 # CPU Power Performance Predikció 🚀
 
 Ez a repozitórium egy egyetemi gépi tanulás feladat megoldását tartalmazza. A projekt célja asztali és mobil processzorok (CPU) `powerPerf` (teljesítmény/fogyasztás) arányának megjóslása többváltozós **lineáris regresszió** segítségével.
