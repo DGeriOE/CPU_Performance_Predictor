@@ -127,27 +127,50 @@ with col_info:
     
     st.subheader("📊 Piaci elhelyezkedés")
     
-    # Matplotlib ábra
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import plotly.express as px
     
-    fig, ax = plt.subplots(figsize=(7, 4))
-    sns.histplot(df_full['powerPerf'], kde=False, ax=ax, color='gray', alpha=0.5)
+    # 1. Hisztogram generálása logaritmikus Y-tengellyel
+    fig = px.histogram(
+        df_full, 
+        x='powerPerf', 
+        nbins=100, # A felbontás sűrűsége
+        color_discrete_sequence=['#888888'],
+        opacity=0.7,
+        log_y=True # Logaritmikus skála bekapcsolása!
+    )
 
-    # 1. A becsült érték (Mindig ott van)
-    ax.axvline(prediction_actual, color='red', linestyle='--', linewidth=2, label='Becsült érték')
+    # 2. A becsült érték vonala (Piros szaggatott)
+    fig.add_vline(
+        x=prediction_actual, 
+        line_dash="dash", 
+        line_color="#ff4b4b", # Streamlit piros
+        annotation_text=f"Becsült: {prediction_actual:.1f}",
+        annotation_position="top right"
+    )
 
-    # 2. Ha van eredeti adat, azt is tegyük rá más színnel!
+    # 3. Ha van eredeti adat, a valós érték vonala (Zöld folytonos)
     if default_values is not None:
         actual_val = default_values['powerPerf']
-        ax.axvline(actual_val, color='green', linestyle='-', linewidth=2, label='Valós érték')
-        ax.legend() # Hogy látszódjon a jelmagyarázat
+        fig.add_vline(
+            x=actual_val, 
+            line_dash="solid", 
+            line_color="#21c354", # Streamlit zöld
+            annotation_text=f"Valós: {actual_val:.1f}",
+            annotation_position="top left"
+        )
 
-    ax.set_yscale('log')
-
-    ax.set_title("Power Performance eloszlás")
-    fig.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    # 4. Megjelenés finomhangolása (margók, tengelynevek)
+    fig.update_layout(
+        title_text="Power Performance eloszlás",
+        xaxis_title="Power Performance",
+        yaxis_title="Processzorok száma (log skála)",
+        margin=dict(l=20, r=20, t=40, b=20),
+        height=400,
+        showlegend=False,
+        hovermode="x" # Az egér követése
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
     
     percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
     st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
