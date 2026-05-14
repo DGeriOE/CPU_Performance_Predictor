@@ -33,7 +33,20 @@ except Exception as e:
     st.stop()
 
 # --- 2. UI Beállítása ---
-st.set_page_config(page_title="CPU Predictor", layout="wide")
+st.set_page_config(page_title="CPU Predictor", layout="wide", initial_sidebar_state="expanded")
+st.markdown("""
+    <style>
+        /* Eltünteti a felesleges paddingot a fő konténer körül */
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        /* Megakadályozza az iframe ugrálást */
+        iframe {
+            display: block;
+        }
+    </style>
+""", unsafe_allow_html=True)
 st.title("🚀 CPU Power Performance Becslés és Validáció")
 
 # --- 3. Szűrő és Legördülő menü a Side baron ---
@@ -98,10 +111,6 @@ def user_input_features(defaults):
 input_df = user_input_features(default_values)
 
 # --- 5. Megjelenítés és Predikció ---
-# Session state inicializálása, hogy ne felejtse el az eredményt
-if 'prediction_results' not in st.session_state:
-    st.session_state.prediction_results = None
-
 col_info, col_pred = st.columns([1, 1])
 
 with col_info:
@@ -115,71 +124,62 @@ with col_info:
     # Feature Importance kinyerése és rendezése
     importances = pd.Series(pp_model.feature_importances_, index=model_columns)
     top_10_features = importances.sort_values(ascending=False).head(10)
-    
-    # Megjelenítés vízszintes oszlopdiagramon
     st.bar_chart(top_10_features)
     st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
 
 with col_pred:
-    # A gomb csak a számítást indítja el
-    if st.button('Becslés indítása', use_container_width=True):
-        with st.spinner('Számítás folyamatban...'):
-            # Kódolás és predikció
-            input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
-            input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
-            
-            prediction_log = pp_model.predict(input_final)
-            prediction_actual = np.expm1(prediction_log)[0]
-            
-            # Eredmények mentése session-be
-            st.session_state.prediction_results = {
-                'prediction_actual': prediction_actual,
-                'input_df': input_df.copy()
-            }
-
-    # Ha már van eredmény a session-ben, megjelenítjük (így nem ugrik el)
-    if st.session_state.prediction_results is not None:
-        res = st.session_state.prediction_results
-        pred_val = res['prediction_actual']
-        
-        st.success(f"### Becsült Power Performance:\n# {round(pred_val, 2)}")
-        
-        if default_values is not None:
-            actual_pp = round(default_values['powerPerf'], 2)
-            percent_diff = ((pred_val - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
-            
-            label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
-            
-            st.metric(
-                label=label_text, 
-                value=actual_pp, 
-                delta=f"{round(percent_diff, 2)}% eltérés",
-                delta_color="inverse" if abs(percent_diff) > 5 else "normal" 
-            )
-
-            # Kiértékelés
-            if abs(percent_diff) < 0.1:
-                st.write("✨ **Tökéletes egyezés!**")
-            elif abs(percent_diff) < 10:
-                st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
-            else:
-                st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
+    # Kódolás és predikció
+    input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
+    input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
     
-        st.divider()
-        st.subheader("📊 Piaci elhelyezkedés")
+    prediction_log = pp_model.predict(input_final)
+    prediction_actual = np.expm1(prediction_log)[0]
+
+    # Eredmény megjelenítése     
+    st.success(f"### Becsült Power Performance:\n# {round(prediction_actual, 2)}")
+    
+    if default_values is not None:
+        actual_pp = round(default_values['powerPerf'], 2)
+        percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
         
-        # FONTOS: Itt a df_full-t használjuk, nem töltünk be fájlt újra!
-        import matplotlib.pyplot as plt
-        import seaborn as sns
+        label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
         
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(df_full['powerPerf'], kde=True, ax=ax, color='gray', alpha=0.5)
-        ax.axvline(pred_val, color='red', linestyle='--', linewidth=2, label='Te processzorod')
-        ax.set_title("Power Performance eloszlás")
-        ax.legend()
-        st.pyplot(fig)
-        
-        percentile = (df_full['powerPerf'] < pred_val).mean() * 100
-        st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
-    else:
-        st.info("Kattints a fenti gombra a becsléshez!")
+        st.metric(
+            label=label_text, 
+            value=actual_pp, 
+            delta=f"{round(percent_diff, 2)}% eltérés",
+            delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
+        )
+
+        # Kiértékelés
+        if abs(percent_diff) < 0.1:
+            st.write("✨ **Tökéletes egyezés!**")
+        elif abs(percent_diff) < 10:
+            st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
+        else:
+            st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
+
+    st.divider()
+    st.subheader("📊 Piaci elhelyezkedés")
+    
+    # Matplotlib ábra
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    
+    fig, ax = plt.subplots(figsize=(7, 3))
+    sns.histplot(df_full['powerPerf'], kde=True, ax=ax, color='gray', alpha=0.5)
+
+    # 1. A becsült érték (Mindig ott van)
+    ax.axvline(prediction_actual, color='red', linestyle='--', linewidth=2, label='Becsült érték')
+
+    # 2. Ha van eredeti adat, azt is tegyük rá más színnel!
+    if default_values is not None:
+        actual_val = default_values['powerPerf']
+        ax.axvline(actual_val, color='green', linestyle='-', linewidth=2, label='Valós érték')
+        ax.legend() # Hogy látszódjon a jelmagyarázat
+
+    ax.set_title("Power Performance eloszlás")
+    st.pyplot(fig, use_container_width=True)
+    
+    percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
+    st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
