@@ -62,8 +62,8 @@ A projekt egy dedikált Conda környezetet használ a függőségek kezelésére
 
 ## ✅ Ütemterv / Státusz
 
-- [ ] 1. fázis: Adatfeltárás (EDA), hiányzó értékek kezelése, adatszivárgás megszüntetése.
-- [ ] 2. fázis: Feature engineering (pl. dátumok átalakítása, kategóriák One-Hot kódolása).
-- [ ] 3. fázis: Lineáris regressziós modell építése és kiértékelése ($R^2$, MSE, MAE).
-- [ ] 4. fázis: Webalkalmazás (Streamlit) fejlesztése és a modell integrálása.
-- [ ] 5. fázis: Publikálás valós eszközön történő teszteléshez.
+- [x] 1. fázis: Adatfeltárás (EDA), hiányzó értékek kezelése, adatszivárgás megszüntetése.
+- [x] 2. fázis: Feature engineering (pl. dátumok átalakítása, kategóriák One-Hot kódolása).
+- [x] 3. fázis: Lineáris regressziós modell építése és kiértékelése ($R^2$, MSE, MAE).
+- [x] 4. fázis: Webalkalmazás (Streamlit) fejlesztése és a modell integrálása.
+- [x] 5. fázis: Publikálás valós eszközön történő teszteléshez.
