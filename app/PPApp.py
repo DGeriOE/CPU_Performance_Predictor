@@ -138,26 +138,35 @@ with col_pred:
     # Eredmény megjelenítése     
     st.success(f"### Becsült Power Performance:\n# {round(prediction_actual, 2)}")
     
-    if default_values is not None:
-        actual_pp = round(default_values['powerPerf'], 2)
-        percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
-        
-        label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
-        
-        st.metric(
-            label=label_text, 
-            value=actual_pp, 
-            delta=f"{round(percent_diff, 2)}% eltérés",
-            delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
-        )
+    # 1. Fix magasságú doboz létrehozása (a magasságot finomhangolhatod, 130-150 pixel általában elég)
+    eval_container = st.container(height=140, border=False)
+    
+    with eval_container:
+        if default_values is not None:
+            actual_pp = round(default_values['powerPerf'], 2)
+            percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
+            
+            label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
+            
+            # A metrika megjelenítése
+            st.metric(
+                label=label_text, 
+                value=actual_pp, 
+                delta=f"{round(percent_diff, 2)}% eltérés",
+                delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
+            )
 
-        # Kiértékelés
-        if abs(percent_diff) < 0.1:
-            st.write("✨ **Tökéletes egyezés!**")
-        elif abs(percent_diff) < 10:
-            st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
+            # Kiértékelés
+            if abs(percent_diff) < 0.1:
+                st.write("✨ **Tökéletes egyezés!**")
+            elif abs(percent_diff) < 10:
+                st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
+            else:
+                st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
         else:
-            st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
+            # 2. Ha manuális bevitel van, egy láthatatlan vagy diszkrét szöveget teszünk be,
+            #    hogy a doboz kitöltse a lefoglalt helyet.
+            st.caption("ℹ️ Válassz egy konkrét processzort az összehasonlításhoz!")
 
     st.divider()
     st.subheader("📊 Piaci elhelyezkedés")
