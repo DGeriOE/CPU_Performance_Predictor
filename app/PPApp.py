@@ -109,6 +109,11 @@ def user_input_features(defaults):
     })
 
 input_df = user_input_features(default_values)
+input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
+input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
+
+prediction_log = pp_model.predict(input_final)
+prediction_actual = np.expm1(prediction_log)[0]
 
 # --- 5. Megjelenítés és Predikció ---
 col_info, col_pred = st.columns([1, 1])
@@ -120,21 +125,34 @@ with col_info:
         st.info(status_msg)
     st.divider()
     
-    st.subheader("🎯 Mi befolyásolta a döntést?")
-    # Feature Importance kinyerése és rendezése
-    importances = pd.Series(pp_model.feature_importances_, index=model_columns)
-    top_10_features = importances.sort_values(ascending=False).head(10)
-    st.bar_chart(top_10_features)
-    st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
+    st.subheader("📊 Piaci elhelyezkedés")
+    
+    # Matplotlib ábra
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    
+    fig, ax = plt.subplots(figsize=(7, 4))
+    sns.histplot(df_full['powerPerf'], kde=False, ax=ax, color='gray', alpha=0.5)
+
+    # 1. A becsült érték (Mindig ott van)
+    ax.axvline(prediction_actual, color='red', linestyle='--', linewidth=2, label='Becsült érték')
+
+    # 2. Ha van eredeti adat, azt is tegyük rá más színnel!
+    if default_values is not None:
+        actual_val = default_values['powerPerf']
+        ax.axvline(actual_val, color='green', linestyle='-', linewidth=2, label='Valós érték')
+        ax.legend() # Hogy látszódjon a jelmagyarázat
+
+    ax.set_yscale('log')
+
+    ax.set_title("Power Performance eloszlás")
+    fig.tight_layout()
+    st.pyplot(fig, use_container_width=True)
+    
+    percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
+    st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
 
 with col_pred:
-    # Kódolás és predikció
-    input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
-    input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
-    
-    prediction_log = pp_model.predict(input_final)
-    prediction_actual = np.expm1(prediction_log)[0]
-
     # Eredmény megjelenítése     
     st.success(f"### Becsült Power Performance:\n# {round(prediction_actual, 2)}")
     
@@ -169,26 +187,10 @@ with col_pred:
             st.caption("ℹ️ Válassz egy konkrét processzort az összehasonlításhoz!")
 
     st.divider()
-    st.subheader("📊 Piaci elhelyezkedés")
-    
-    # Matplotlib ábra
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    
-    fig, ax = plt.subplots(figsize=(7, 3))
-    sns.histplot(df_full['powerPerf'], kde=True, ax=ax, color='gray', alpha=0.5)
 
-    # 1. A becsült érték (Mindig ott van)
-    ax.axvline(prediction_actual, color='red', linestyle='--', linewidth=2, label='Becsült érték')
-
-    # 2. Ha van eredeti adat, azt is tegyük rá más színnel!
-    if default_values is not None:
-        actual_val = default_values['powerPerf']
-        ax.axvline(actual_val, color='green', linestyle='-', linewidth=2, label='Valós érték')
-        ax.legend() # Hogy látszódjon a jelmagyarázat
-
-    ax.set_title("Power Performance eloszlás")
-    st.pyplot(fig, use_container_width=True)
-    
-    percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
-    st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
+    st.subheader("🎯 Mi befolyásolta a döntést?")
+    # Feature Importance kinyerése és rendezése
+    importances = pd.Series(pp_model.feature_importances_, index=model_columns)
+    top_10_features = importances.sort_values(ascending=False).head(10).round(3)
+    st.bar_chart(top_10_features)
+    st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
