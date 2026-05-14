@@ -134,9 +134,15 @@ with col_info:
         df_full, 
         x='powerPerf', 
         nbins=100, # A felbontás sűrűsége
-        color_discrete_sequence=['#888888'],
+        color_discrete_sequence=['#b4b4b4'],
         opacity=0.7,
         log_y=True # Logaritmikus skála bekapcsolása!
+    )
+
+    fig.update_traces(
+        marker_line_color='#111111', # Sötét körvonal színe
+        marker_line_width=1.5,       # Körvonal vastagsága
+        opacity=0.8                  # Pici átlátszóság
     )
 
     # 2. A becsült érték vonala (Piros szaggatott)
@@ -170,6 +176,7 @@ with col_info:
         hovermode="x" # Az egér követése
     )
     
+    fig.update_yaxes(exponentformat="power", showexponent="all")
     st.plotly_chart(fig, use_container_width=True)
     
     percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
