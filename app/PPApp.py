@@ -94,7 +94,6 @@ def user_input_features(defaults):
     def get_val(key, default):
         return defaults[key] if defaults is not None else default
 
-    cpuMark = st.sidebar.number_input("CPU Mark", min_value=0, value=int(get_val('cpuMark', 15000)))
     threadMark = st.sidebar.number_input("Thread Mark", min_value=0, value=int(get_val('threadMark', 2500)))
     cores = st.sidebar.slider("Magok száma", 1, 128, value=int(get_val('cores', 8)))
     price = st.sidebar.number_input("Ár (USD)", min_value=0.0, value=float(get_val('price', 300.0)))
@@ -103,7 +102,7 @@ def user_input_features(defaults):
     socket = st.sidebar.selectbox("Socket", sock_list, index=get_idx(sock_list, get_val('socket_grouped', '')))
 
     return pd.DataFrame({
-        'cpuMark': [cpuMark], 'threadMark': [threadMark], 'cores': [cores],
+        'threadMark': [threadMark], 'cores': [cores],
         'price': [price], 'testDate': [testDate], 'category': [category],
         'socket_grouped': [socket]
     })
