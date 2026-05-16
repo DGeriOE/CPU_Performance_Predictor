@@ -6,3 +6,6 @@ numpy
 matplotlib
 seaborn
 plotly
+xgboost
+lightgbm
+catboost

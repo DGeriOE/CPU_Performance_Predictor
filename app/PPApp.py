@@ -8,7 +8,7 @@ import os
 @st.cache_data
 def load_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_final_imputed.csv") 
+    data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_v4_price_imputed.csv") 
     df = pd.read_csv(data_path)
     return df
 
@@ -17,7 +17,7 @@ def load_assets():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     base_path = os.path.join(current_dir, "..", "models")
     
-    model = joblib.load(os.path.join(base_path, 'powerPerf_rf_model.pkl'))
+    model = joblib.load(os.path.join(base_path, 'powerPerf_model.pkl'))
     columns = joblib.load(os.path.join(base_path, 'powerPerf_model_columns.pkl'))
     categories = joblib.load(os.path.join(base_path, 'categories_list.pkl'))
     sockets = joblib.load(os.path.join(base_path, 'sockets_list.pkl'))
@@ -50,7 +50,7 @@ st.markdown("""
 st.title("🚀 CPU Power Performance Becslés és Validáció")
 
 # --- 3. Szűrő és Legördülő menü a Side baron ---
-st.sidebar.header("Adathalmaz választása")
+st.sidebar.header("CPU választása")
 
 # ÚJ: Választókapcsoló az adathalmaz típusához
 data_mode = st.sidebar.radio(
@@ -61,10 +61,10 @@ data_mode = st.sidebar.radio(
 
 # Adatok szűrése a választás alapján
 if data_mode == "Pótolt adatok (Imputed)":
-    current_display_df = df_full[df_full['powerPerf_is_imputed'] == 1].copy()
-    status_msg = "📌 Ez egy eredetileg hiányos adatú processzor, amit regresszióval pótoltál."
+    current_display_df = df_full[df_full['price_is_imputed'] == 1].copy()
+    status_msg = "📌 Ez egy eredetileg hiányos adatú processzor, ahol azt regresszióval pótoltuk."
 else:
-    current_display_df = df_full[df_full['powerPerf_is_imputed'] == 0].copy()
+    current_display_df = df_full[df_full['price_is_imputed'] == 0].copy()
     status_msg = "🔍 Ez egy valós mérési adat. Teszteld, mennyire pontos a modell becslése!"
 
 st.sidebar.write(f"Talált processzorok: {len(current_display_df)} db")
@@ -111,8 +111,8 @@ input_df = user_input_features(default_values)
 input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
 input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
 
-prediction_log = pp_model.predict(input_final)
-prediction_actual = np.expm1(prediction_log)[0]
+prediction = pp_model.predict(input_final)
+prediction_actual = prediction[0]
 
 # --- 5. Megjelenítés és Predikció ---
 col_info, col_pred = st.columns([1, 1])
@@ -134,7 +134,7 @@ with col_info:
         x='powerPerf', 
         nbins=100, # A felbontás sűrűsége
         color_discrete_sequence=['#b4b4b4'],
-        opacity=0.7,
+        opacity=0.6,
         log_y=True # Logaritmikus skála bekapcsolása!
     )
 
@@ -183,7 +183,8 @@ with col_info:
 
 with col_pred:
     # Eredmény megjelenítése     
-    st.success(f"### Becsült Power Performance:\n# {round(prediction_actual, 2)}")
+    sucess_text = "Becsült Power Performance:" if data_mode.startswith("Eredeti") else "Pótolt értékekkel becsült Power Performance:"
+    st.success(f"### {sucess_text}\n# {prediction_actual:.2f}")
     
     # 1. Fix magasságú doboz létrehozása (a magasságot finomhangolhatod, 130-150 pixel általában elég)
     eval_container = st.container(height=140, border=False)
@@ -193,7 +194,7 @@ with col_pred:
             actual_pp = round(default_values['powerPerf'], 2)
             percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
             
-            label_text = "Eredeti érték (CSV)" if data_mode.startswith("Eredeti") else "Pótolt érték (CSV)"
+            label_text = "Eredeti érték (CSV)"
             
             # A metrika megjelenítése
             st.metric(
