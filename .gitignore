@@ -12,8 +12,6 @@ catbboost_info
 */catbboost_info/*
 notebooks/catboost_info/catboost_training.json
 notebooks/catboost_info/learn_error.tsv
-.gitignore
-.gitignore
 notebooks/catboost_info/time_left.tsv
 notebooks/catboost_info/learn/events.out.tfevents
 
