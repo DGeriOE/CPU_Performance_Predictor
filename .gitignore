@@ -7,6 +7,10 @@ __pycache__/
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
+# CatBoost specifikus fájlok (ha használod a CatBoost-ot, ezek a fájlok jönnek létre a tanítás során)
+catbboost_info
+*/catbboost_info/*
+
 # Conda és virtuális környezetek (ha a projekt mappájába hozod létre őket)
 env/
 .env/
