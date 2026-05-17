@@ -13,10 +13,21 @@ def load_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     processed_dir = os.path.join(current_dir, "..", "data", "processed")
     data_path = os.path.join(processed_dir, "CPU_benchmark_v4_price_imputed.csv")
-    df = pd.read_csv(data_path)
+    df_raw = pd.read_csv(data_path)
     inference_path = os.path.join(processed_dir, "CPU_benchmark_v4_inference.csv")
     df_inference = pd.read_csv(inference_path)
-    return df, df_inference
+
+    # Szigorúan csak azokat tartjuk meg, ahol az ár eredetileg is létezett (1938 sor)
+    if 'price_is_imputed' in df_raw.columns:
+        df_pure = df_raw[df_raw['price_is_imputed'] == 0].copy()
+    else:
+        df_pure = df_raw.dropna(subset=['price', 'powerPerf']).copy()
+
+    df_price = df_raw[df_raw['price_is_imputed'] == 1].copy()
+        
+    inference_path = os.path.join(processed_dir, "CPU_benchmark_v4_inference.csv")
+    df_inference = pd.read_csv(inference_path)
+    return df_pure, df_inference, df_price
 
 @st.cache_resource
 def load_assets():
@@ -34,7 +45,7 @@ def load_assets():
 
 # Adatok betöltése
 try:
-    df_full, df_inference = load_data()
+    df_pure, df_inference, df_price = load_data()
     pp_model, model_columns, cat_list, sock_list, importance_data = load_assets()
 except Exception as e:
     st.error(f"Hiba a betöltéskor: {e}")
@@ -63,17 +74,26 @@ st.sidebar.header("CPU választása")
 # ÚJ: Választókapcsoló az adathalmaz típusához
 data_mode = st.sidebar.radio(
     "Milyen adatok között böngésznél?",
-    ["Látatlan adatok (Inference)", "Eredeti adatok (tanulóhalmaz)"],
-    help="A 'Pótolt' a modell által generált értékeket mutatja, az 'Eredeti' a valós benchmark eredményeket."
+    [
+        "Eredeti adatok (Pure)",
+        "Price pótolt adatok (Imputed)",
+        "Látatlan adatok (Inference)",
+    ],
+    help="A 'Pure' a szigorúan valós, míg az 'Imputed' a külön modell által tippel áras sorokat mutatja."
 )
 
 # Adatok szűrése a választás alapján
 if data_mode == "Látatlan adatok (Inference)":
     current_display_df = df_inference.copy()
-    status_msg = "📌 Modell által eddig nem látott adatok (TDP hiányzik)"
-else:
-    current_display_df = df_full.copy()
-    status_msg = "📌 Tanítóhalmaz elemei"
+    status_msg = "📌 Modell által eddig nem látott valós adatok (TDP hiányzik)"
+
+elif data_mode == "Price pótolt adatok (Imputed)":
+    current_display_df = df_price.copy()  # Javítva a df._price elírás
+    status_msg = "📌 Pótolt (Imputed) Ár egy külön modell alapján."
+
+else:  # Eredeti adatok (Pure)
+    current_display_df = df_pure.copy()
+    status_msg = "📌 Tanítóhalmaz tiszta (Pure) elemei"
 
 
 st.sidebar.write(f"Talált processzorok: {len(current_display_df)} db")
@@ -137,7 +157,7 @@ with col_info:
     st.subheader("📊 Piaci elhelyezkedés")
 
     # 1. Alap hisztogram létrehozása (nbins=100 és log skála)
-    base_hist = alt.Chart(df_full).encode(
+    base_hist = alt.Chart(df_pure).encode(
         x=alt.X('powerPerf:Q', bin=alt.Bin(maxbins=100), title="Power Performance"),
         y=alt.Y('count():Q', scale=alt.Scale(type='log', domain=[0.5, 600]), title="Processzorok száma (log skála)")
     )
@@ -203,7 +223,7 @@ with col_info:
         st.altair_chart(final_chart, use_container_width=True)
 
         # Százalékos számítás változatlan marad
-        percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
+        percentile = (df_pure['powerPerf'] < prediction_actual).mean() * 100
         st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
 
 with col_pred:
@@ -219,7 +239,7 @@ with col_pred:
             actual_pp = round(default_values['powerPerf'], 2)
             percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
             
-            if data_mode.startswith("Eredeti"):
+            if data_mode.startswith("Eredeti") or data_mode.startswith("Price pótolt"):
                 label_text = "Eredeti érték (CSV)"
             
                 # A metrika megjelenítése
