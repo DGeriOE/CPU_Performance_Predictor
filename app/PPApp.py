@@ -110,6 +110,7 @@ def user_input_features(defaults):
 input_df = user_input_features(default_values)
 input_encoded = pd.get_dummies(input_df, columns=['category', 'socket_grouped'])
 input_final = input_encoded.reindex(columns=model_columns, fill_value=0)
+input_final = input_final.astype(float)
 
 prediction = pp_model.predict(input_final)
 prediction_actual = prediction[0]
