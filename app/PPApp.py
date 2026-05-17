@@ -2,7 +2,10 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import os
+import altair as alt
 
 # --- 1. Adatok és Modellek betöltése ---
 @st.cache_data
@@ -24,13 +27,15 @@ def load_assets():
     columns = joblib.load(os.path.join(base_path, 'powerPerf_model_columns.pkl'))
     categories = joblib.load(os.path.join(base_path, 'categories_list.pkl'))
     sockets = joblib.load(os.path.join(base_path, 'sockets_list.pkl'))
+
+    importance = joblib.load(os.path.join(base_path, 'powerPerf_importance.pkl'))
     
-    return model, columns, categories, sockets
+    return model, columns, categories, sockets, importance
 
 # Adatok betöltése
 try:
     df_full, df_inference = load_data()
-    pp_model, model_columns, cat_list, sock_list = load_assets()
+    pp_model, model_columns, cat_list, sock_list, importance_data = load_assets()
 except Exception as e:
     st.error(f"Hiba a betöltéskor: {e}")
     st.stop()
@@ -130,61 +135,75 @@ with col_info:
     st.divider()
     
     st.subheader("📊 Piaci elhelyezkedés")
-    
-    import plotly.express as px
-    
-    # 1. Hisztogram generálása logaritmikus Y-tengellyel
-    fig = px.histogram(
-        df_full, 
-        x='powerPerf', 
-        nbins=100, # A felbontás sűrűsége
-        color_discrete_sequence=['#b4b4b4'],
-        opacity=0.6,
-        log_y=True # Logaritmikus skála bekapcsolása!
+
+    # 1. Alap hisztogram létrehozása (nbins=100 és log skála)
+    base_hist = alt.Chart(df_full).encode(
+        x=alt.X('powerPerf:Q', bin=alt.Bin(maxbins=100), title="Power Performance"),
+        y=alt.Y('count():Q', scale=alt.Scale(type='log', domain=[0.5, 600]), title="Processzorok száma (log skála)")
     )
 
-    fig.update_traces(
-        marker_line_color='#111111', # Sötét körvonal színe
-        marker_line_width=1.5,       # Körvonal vastagsága
-        opacity=0.8                  # Pici átlátszóság
+    # A hasábok testreszabása (szín, körvonal, átlátszóság)
+    bars = base_hist.mark_bar(
+        color='#b4b4b4',
+        opacity=0.8,
+        stroke='#111111',
+        strokeWidth=1
     )
 
-    # 2. A becsült érték vonala (Piros szaggatott)
-    fig.add_vline(
-        x=prediction_actual, 
-        line_dash="dash", 
-        line_color="#ff4b4b", # Streamlit piros
-        annotation_text=f"Becsült: {prediction_actual:.1f}",
-        annotation_position="top right"
-    )
+    # Rétegek listája (első elem a hisztogram)
+    chart_layers = [bars]
 
-    # 3. Ha van eredeti adat, a valós érték vonala (Zöld folytonos)
+    # 2. A becsült érték vonala és szövege (Piros szaggatott)
+    df_pred = pd.DataFrame([{"val": prediction_actual, "szoveg": f"Becsült: {prediction_actual:.1f}"}])
+
+    vonal_pred = alt.Chart(df_pred).mark_rule(
+        color='#ff4b4b', 
+        strokeDash=[5, 5], 
+        strokeWidth=2
+    ).encode(x='val:Q')
+
+    szoveg_pred = alt.Chart(df_pred).mark_text(
+        align='left', 
+        dx=5, 
+        dy=-160, # A grafikon tetejére pozícionálja a feliratot
+        color='#ff4b4b', 
+        fontWeight='bold'
+    ).encode(x='val:Q', text='szoveg:N')
+
+    chart_layers.extend([vonal_pred, szoveg_pred])
+
+    # 3. Ha van eredeti adat, a valós érték vonala és szövege (Zöld folytonos)
     if default_values is not None:
         actual_val = default_values['powerPerf']
-        fig.add_vline(
-            x=actual_val, 
-            line_dash="solid", 
-            line_color="#21c354", # Streamlit zöld
-            annotation_text=f"Valós: {actual_val:.1f}",
-            annotation_position="top left"
-        )
+        df_act = pd.DataFrame([{"val": actual_val, "szoveg": f"Valós: {actual_val:.1f}"}])
+        
+        vonal_act = alt.Chart(df_act).mark_rule(
+            color='#21c354', 
+            strokeWidth=2
+        ).encode(x='val:Q')
+        
+        szoveg_act = alt.Chart(df_act).mark_text(
+            align='right', 
+            dx=-5, 
+            dy=-160, 
+            color='#21c354', 
+            fontWeight='bold'
+        ).encode(x='val:Q', text='szoveg:N')
+        
+        chart_layers.extend([vonal_act, szoveg_act])
 
-    # 4. Megjelenés finomhangolása (margók, tengelynevek)
-    fig.update_layout(
-        title_text="Power Performance eloszlás",
-        xaxis_title="Power Performance",
-        yaxis_title="Processzorok száma (log skála)",
-        margin=dict(l=20, r=20, t=40, b=20),
-        height=400,
-        showlegend=False,
-        hovermode="x" # Az egér követése
-    )
-    
-    fig.update_yaxes(exponentformat="power", showexponent="all")
-    st.plotly_chart(fig, use_container_width=True)
-    
-    percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
-    st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
+        # 4. Rétegek összefésülése és tulajdonságok beállítása
+        final_chart = alt.layer(*chart_layers).properties(
+            title="Power Performance eloszlás",
+            height=400
+        ).interactive() # Zoomolható, körbevezethető egérrel!
+
+        # Megjelenítés az appban
+        st.altair_chart(final_chart, use_container_width=True)
+
+        # Százalékos számítás változatlan marad
+        percentile = (df_full['powerPerf'] < prediction_actual).mean() * 100
+        st.write(f"Ez a processzor hatékonyabb a piacon levő modellek **{percentile:.1f}%**-ánál.")
 
 with col_pred:
     # Eredmény megjelenítése     
@@ -226,7 +245,27 @@ with col_pred:
 
     st.subheader("🎯 Mi befolyásolta a döntést?")
     # Feature Importance kinyerése és rendezése
-    importances = pd.Series(pp_model.feature_importances_, index=model_columns)
+    importances = pd.Series(importance_data.values(), index=importance_data.keys())
     top_10_features = importances.sort_values(ascending=False).head(10).round(3)
-    st.bar_chart(top_10_features)
-    st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
+    top_10_features.index = top_10_features.index.str.replace('category_', 'Kategória: ')
+    top_10_features.index = top_10_features.index.str.replace('socket_grouped_', 'Foglalat: ')
+    df_chart = top_10_features.reset_index()
+    df_chart.columns = ['Változó', 'Fontosság']
+    
+    # Gyönyörű, vízszintes, interaktív Streamlit-Altair diagram építése
+    chart = alt.Chart(df_chart).mark_bar().encode(
+        x=alt.X('Fontosság:Q', title='Fontossági mutató (Permutation Importance)'),
+        y=alt.Y('Változó:N', sort='-x', title=''), # Autómatikusan csökkenő sorrendbe rakja a neveket
+        color=alt.Color('Fontosság:Q', scale=alt.Scale(scheme='viridis'), legend=None) # Szép viridis színátmenet
+    ).properties(
+        height=350
+    ).interactive() # Körbe lehet húzni, bele lehet nagyítani!
+
+    # Átadjuk a natív Streamlit komponensnek
+    st.altair_chart(chart, use_container_width=True)
+    st.caption("A top 10 legfontosabb tényező, ami meghatározza a Stacking modell döntési logikáját (Permutation Importance).")
+
+    # importances = pd.Series(pp_model.feature_importances_, index=model_columns)
+    # top_10_features = importances.sort_values(ascending=False).head(10).round(3)
+    # st.bar_chart(top_10_features)
+    # st.caption("A 10 legfontosabb tényező, ami meghatározta ezt a becslést.")
