@@ -1,0 +1,30 @@
+cpuName,price,cpuMark,cpuValue,threadMark,threadValue,TDP,powerPerf,cores,testDate,socket,category,socket_grouped
+AMD EPYC 7371,1808.99,31094,17.19,2377,1.31,,,16,2019,SP3,Server,SP3
+Intel Core i7-1160G7 @ 1.20GHz,426.0,10316,24.22,2827,6.64,,,4,2021,FCBGA1598,Laptop,Other
+Intel Xeon E5-2651 v2 @ 1.80GHz,278.1,9216,33.14,1118,4.02,,,12,2016,LGA 2011,Server,Other
+Intel Core i3-10105F @ 3.70GHz,78.99,9141,115.72,2675,33.86,,,4,2021,FCLGA1200,Desktop,FCLGA1200
+Intel Core i3-1115G4 @ 3.00GHz,281.0,6273,22.33,2695,9.59,,,2,2020,FCBGA1449,Laptop,Other
+Intel Core i3-1110G4 @ 1.80GHz,281.0,3421,12.18,1986,7.07,,,2,2022,FCBGA1598,Mobile/Embedded,Other
+Intel Core 860 @ 2.80GHz,317.81,2754,8.66,1142,3.59,,,4,2010,unknown,Unknown,unknown
+HP Hexa-Core 2.0GHz,504.27,1741,3.45,804,1.59,,,4,2014,unknown,Unknown,unknown
+Intel Core2 Duo E8435 @ 3.06GHz,59.99,1240,20.67,1307,21.78,,,2,2009,Socket P,Laptop,Other
+Intel Xeon 3075 @ 2.66GHz,349.95,1096,3.13,1096,3.13,,,2,2011,unknown,Server,unknown
+Octa Core,552.5,940,1.7,400,0.72,,,8,2021,unknown,Mobile/Embedded,unknown
+Intel Core2 Duo T5850 @ 2.16GHz,27.79,657,23.63,769,27.68,,,2,2009,Socket P,Laptop,Other
+Intel T1400 @ 1.73GHz,15.0,475,31.7,671,44.73,,,2,2009,unknown,Unknown,unknown
+AMD Sempron M100,12.0,338,28.15,587,48.91,,,1,2009,unknown,Unknown,unknown
+AMD Athlon XP 2700+,84.79,256,3.02,398,4.69,,,1,2008,unknown,Unknown,unknown
+AMD Sempron 2600+,34.95,253,7.23,325,9.31,,,1,2008,Socket A,Desktop,Other
+AMD Athlon XP 2600+,23.03,242,10.52,380,16.49,,,1,2008,unknown,Unknown,unknown
+AMD Athlon XP 2400+,79.99,234,2.93,375,4.69,,,1,2009,unknown,Unknown,unknown
+AMD Athlon XP 2200+,84.95,214,2.52,335,3.94,,,1,2009,unknown,Unknown,unknown
+AMD Athlon XP 2100+,63.75,210,3.3,327,5.12,,,1,2009,unknown,Unknown,unknown
+AMD Sempron 2300+,45.0,207,4.6,314,6.98,,,1,2009,Socket A,Desktop,Other
+AMD Sempron 2500+,59.95,207,3.45,405,6.75,,,1,2009,Socket A,Desktop,Other
+AMD Sempron 2400+,12.99,205,15.74,321,24.72,,,1,2008,Socket A,Desktop,Other
+AMD Athlon XP 1900+,45.8,203,4.44,312,6.81,,,1,2009,unknown,Unknown,unknown
+AMD Sempron 2200+,39.95,184,4.6,279,6.99,,,1,2009,Socket A,Desktop,Other
+Intel Xeon 2.40GHz,9.1,180,19.73,387,42.52,,,1,2009,unknown,Server,unknown
+Intel Celeron M 1.00GHz,13.99,149,10.65,197,14.12,,,1,2009,unknown,Laptop,unknown
+Mobile Intel Pentium 4 - M 1.70GHz,175.0,121,0.69,297,1.69,,,1,2009,unknown,Laptop,unknown
+Intel Celeron 1100MHz,15.0,113,7.55,183,12.17,,,1,2009,unknown,Unknown,unknown

@@ -40,3 +40,4 @@ Thumbs.db
 # Streamlit specifikus fájlok (későbbre)
 .streamlit/secrets.toml
 .vscode/settings.json
+notebooks/catboost_info/tmp/cat_feature_index.a22cf41f-8cdaaa59-310934fd-ae34e21e.tmp
