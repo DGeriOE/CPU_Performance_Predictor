@@ -145,9 +145,10 @@ with col_info:
     # A hasábok testreszabása (szín, körvonal, átlátszóság)
     bars = base_hist.mark_bar(
         color='#b4b4b4',
-        opacity=0.8,
+        opacity=0.5,
         stroke='#111111',
-        strokeWidth=1
+        strokeWidth=1,
+        binSpacing=1.5
     )
 
     # Rétegek listája (első elem a hisztogram)
