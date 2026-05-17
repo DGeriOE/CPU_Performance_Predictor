@@ -227,7 +227,7 @@ with col_pred:
                     label=label_text, 
                     value=actual_pp, 
                     delta=f"{round(percent_diff, 2)}% eltérés",
-                    delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
+                    delta_color="normal" if (abs(percent_diff) <= 25) == (percent_diff >= 0) else "inverse"
                 )
 
                 # Kiértékelés
