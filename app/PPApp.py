@@ -8,9 +8,12 @@ import os
 @st.cache_data
 def load_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(current_dir, "..", "data", "processed", "CPU_benchmark_v4_price_imputed.csv") 
+    processed_dir = os.path.join(current_dir, "..", "data", "processed")
+    data_path = os.path.join(processed_dir, "CPU_benchmark_v4_price_imputed.csv")
     df = pd.read_csv(data_path)
-    return df
+    inference_path = os.path.join(processed_dir, "CPU_benchmark_v4_inference.csv")
+    df_inference = pd.read_csv(inference_path)
+    return df, df_inference
 
 @st.cache_resource
 def load_assets():
@@ -26,7 +29,7 @@ def load_assets():
 
 # Adatok betöltése
 try:
-    df_full = load_data()
+    df_full, df_inference = load_data()
     pp_model, model_columns, cat_list, sock_list = load_assets()
 except Exception as e:
     st.error(f"Hiba a betöltéskor: {e}")
@@ -55,17 +58,18 @@ st.sidebar.header("CPU választása")
 # ÚJ: Választókapcsoló az adathalmaz típusához
 data_mode = st.sidebar.radio(
     "Milyen adatok között böngésznél?",
-    ["Pótolt adatok (Imputed)", "Eredeti adatok (Original)"],
+    ["Látatlan adatok (Inference)", "Eredeti adatok (tanulóhalmaz)"],
     help="A 'Pótolt' a modell által generált értékeket mutatja, az 'Eredeti' a valós benchmark eredményeket."
 )
 
 # Adatok szűrése a választás alapján
-if data_mode == "Pótolt adatok (Imputed)":
-    current_display_df = df_full[df_full['price_is_imputed'] == 1].copy()
-    status_msg = "📌 Ez egy eredetileg hiányos adatú processzor, ahol azt regresszióval pótoltuk."
+if data_mode == "Látatlan adatok (Inference)":
+    current_display_df = df_inference.copy()
+    status_msg = "📌 Modell által eddig nem látott adatok (TDP hiányzik)"
 else:
-    current_display_df = df_full[df_full['price_is_imputed'] == 0].copy()
-    status_msg = "🔍 Ez egy valós mérési adat. Teszteld, mennyire pontos a modell becslése!"
+    current_display_df = df_full.copy()
+    status_msg = "📌 Tanítóhalmaz elemei"
+
 
 st.sidebar.write(f"Talált processzorok: {len(current_display_df)} db")
 
@@ -184,7 +188,7 @@ with col_info:
 
 with col_pred:
     # Eredmény megjelenítése     
-    sucess_text = "Becsült Power Performance:" if data_mode.startswith("Eredeti") else "Pótolt értékekkel becsült Power Performance:"
+    sucess_text = "Becsült Power Performance:" # if data_mode.startswith("Eredeti") else "Becsült Power Performance:"
     st.success(f"### {sucess_text}\n# {prediction_actual:.2f}")
     
     # 1. Fix magasságú doboz létrehozása (a magasságot finomhangolhatod, 130-150 pixel általában elég)
@@ -195,23 +199,24 @@ with col_pred:
             actual_pp = round(default_values['powerPerf'], 2)
             percent_diff = ((prediction_actual - actual_pp) / actual_pp) * 100 if actual_pp != 0 else 0
             
-            label_text = "Eredeti érték (CSV)"
+            if data_mode.startswith("Eredeti"):
+                label_text = "Eredeti érték (CSV)"
             
-            # A metrika megjelenítése
-            st.metric(
-                label=label_text, 
-                value=actual_pp, 
-                delta=f"{round(percent_diff, 2)}% eltérés",
-                delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
-            )
+                # A metrika megjelenítése
+                st.metric(
+                    label=label_text, 
+                    value=actual_pp, 
+                    delta=f"{round(percent_diff, 2)}% eltérés",
+                    delta_color="normal" if (abs(percent_diff) <= 10) == (percent_diff >= 0) else "inverse"
+                )
 
-            # Kiértékelés
-            if abs(percent_diff) < 0.1:
-                st.write("✨ **Tökéletes egyezés!**")
-            elif abs(percent_diff) < 10:
-                st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
-            else:
-                st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
+                # Kiértékelés
+                if abs(percent_diff) < 0.1:
+                    st.write("✨ **Tökéletes egyezés!**")
+                elif abs(percent_diff) < 10:
+                    st.write("✅ **Megbízható becslés:** A modell jól követi a trendet.")
+                else:
+                    st.write("⚠️ **Jelentős eltérés:** Ennél a típusnál a modell bizonytalanabb.")
         else:
             # 2. Ha manuális bevitel van, egy láthatatlan vagy diszkrét szöveget teszünk be,
             #    hogy a doboz kitöltse a lefoglalt helyet.
